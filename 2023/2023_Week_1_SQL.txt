@@ -1,0 +1,44 @@
+--- 2023 Week 1
+--- https://preppindata.blogspot.com/2023/01/2023-week-1-data-source-bank.html
+--- Created by Carl Allchin
+
+--- Split the Transaction Code to extract the letters at the start of the transaction code. These identify the bank who processes the transaction 
+    --- Rename the new field with the Bank code 'Bank'. 
+--- Rename the values in the Online or In-person field, Online of the 1 values and In-Person for the 2 values. 
+--- Change the date to be the day of the week
+--- Different levels of detail are required in the outputs. You will need to sum up the values of the transactions in three ways:
+    --- 1. Total Values of Transactions by each bank
+    -- 2. Total Values by Bank, Day of the Week and Type of Transaction (Online or In-Person)
+    --- 3. Total Values by Bank and Customer Code
+--- My solution
+WITH prepared_data AS
+    (SELECT  TRIM(SPLIT_PART(transaction_code,'-',1)) AS bank,
+            CASE 
+                WHEN online_or_in_person = '1' THEN 'Online'
+                WHEN online_or_in_person = '2' THEN 'In-Person'
+            END AS online_or_in_person,
+            DAYNAME(DATE(TRIM(SPLIT_PART(transaction_date,' ',1)),'DD/MM/YYYY')) AS transaction_date,
+            customer_code,
+            value
+    FROM PD2023_WK01)
+    
+--- Total Values of Transactions by Bank
+-- SELECT  bank,
+--         SUM(value) AS value
+-- FROM prepared_data
+-- GROUP BY bank;
+
+--- Total Values by Bank, Day of the Week and Type of Transaction (Online or In-Person)
+-- SELECT  bank,
+--         online_or_in_person,
+--         transaction_date,
+--         SUM(value) AS value
+-- FROM prepared_data
+-- GROUP BY 1,2,3;
+
+--- Total Values by Bank and Customer Code
+---SELECT  bank,
+--         customer_code,
+--         SUM(value) AS value
+-- FROM prepared_data
+-- GROUP BY 1,2;
