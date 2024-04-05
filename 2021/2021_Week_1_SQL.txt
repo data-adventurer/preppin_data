@@ -1,1 +1,32 @@
-SELECT NOW();
+--- 2021 Week 1
+--- https://preppindata.blogspot.com/2021/01/2021-week-1.html
+--- Challenge by Carl Allchin
+
+--- This week we are going to be focusing on cleaning data ready to answer some questions from our stakeholders. In the requirements I will be adding some links to some useful resources if you get stuck on a particular requirement. 
+
+--- Requirements
+--- Here's what we need you to do:
+--- Connect and load the csv file (help)
+--- Split the 'Store-Bike' field into 'Store' and 'Bike' (help)
+--- Clean up the 'Bike' field to leave just three values in the 'Bike' field (Mountain, Gravel, Road) (help)
+--- Create two different cuts of the date field: 'quarter' and 'day of month' (help)
+--- Remove the first 10 orders as they are test values (help)
+--- Output the data as a csv (help)
+
+--- My solution
+SELECT  QUARTER(date) AS quarter,
+        TRIM(SPLIT_PART(store_bike,'-',1)) AS store,
+        CASE
+            WHEN SPLIT_PART(store_bike,'-',2) LIKE 'M%' THEN 'Mountain'
+            WHEN SPLIT_PART(store_bike,'-',2) LIKE 'G%' THEN 'Gravel'
+            WHEN SPLIT_PART(store_bike,'-',2) LIKE 'R%' THEN 'Road'
+            ELSE 'Blank'
+        END AS bike,
+        order_id,
+        customer_age,
+        bike_value,
+        existing_customer,
+        DAY(date) AS day_of_month
+FROM PD2021_WK01
+ORDER BY date
+LIMIT NULL OFFSET 10;
