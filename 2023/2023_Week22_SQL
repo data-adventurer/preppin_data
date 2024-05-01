@@ -1,0 +1,30 @@
+--- 2023 Week 22
+--- https://preppindata.blogspot.com/2023/05/2023-week-22-student-attendance-vs-test.html
+--- Challenge by Tanbir Jalil
+
+--- First we must join the test score data set and the additional class attendance data set 
+--- Clean Data: there’s a few spelling mistakes in the data set, use the data tool of your choice to correct these mistakes before we proceed. These mistakes are in the “Subject”  Column
+--- Clean up the test score column, so each number is a rounded to the nearest whole number
+--- Split the student name column so we can see the first name and surname in two separate columns, named appropriately
+--- If any student has an attendance percentage less than 70%, flag it as "Low Attendance" in a new column "attendance flag". Conversely, if above 90%, flag as “high attendance”. And anything else as “Medium”.
+
+--- My solution
+SELECT  CASE 
+            WHEN attendance_percentage < 70 THEN 'Low Attendance'
+            WHEN attendance_percentage > 90 THEN 'High Attendance'
+            ELSE 'Medium'
+        END AS attendance_flag,
+        SPLIT_PART(ts.student_name,'_',1) AS first_name,
+        SPLIT_PART(ts.student_name,'_',2) AS surname,
+        attendance_percentage,
+        student_id,
+        CASE subject
+            WHEN 'Engish' THEN 'English'
+            WHEN 'Sciece' THEN 'Science'
+            WHEN 'Math' THEN 'Math'
+        END AS subject,
+        test_score,
+        ROUND(test_score,0) AS test_score_integer
+FROM PD2023_WK22_STUDENT_TEST_SCORES AS ts
+LEFT JOIN PD2023_WK22_ATTENDANCE_FIGURES AS af
+ON ts.student_name = af.student_name;
