@@ -1,0 +1,76 @@
+import pandas as pd
+
+# import csv files and transform it into a dataframe
+flow_card_df = pd.read_csv('C:/Users/LorraineFerrusi/OneDrive - The Information Lab/Documents/GitHub/preppin_data/2024/Data/PD 2024 Wk 1 Output Flow Card.csv')
+nonflow_card_df = pd.read_csv('C:/Users/LorraineFerrusi/OneDrive - The Information Lab/Documents/GitHub/preppin_data/2024/Data/PD 2024 Wk 1 Output Non-Flow Card.csv')
+
+# import excel file and trasnform each sheet into a dataframe
+excel_file = pd.ExcelFile('C:/Users/LorraineFerrusi/OneDrive - The Information Lab/Documents/GitHub/preppin_data/2024/Data/PD 2024 Wk 3 Input.xlsx')
+
+sheets = {sheet_name: excel_file.parse(sheet_name, index_col=None) for sheet_name in excel_file.sheet_names}
+
+q1_df = sheets['Q1']
+q2_df = sheets['Q2']
+q3_df = sheets['Q3']
+q4_df = sheets['Q4']
+
+quarterly_data = pd.concat([q1_df, q2_df, q3_df, q4_df])
+
+quarterly_data = quarterly_data.rename(columns={'Month': 'Date'})
+quarterly_data = quarterly_data.reset_index()
+quarterly_data = quarterly_data.drop(columns=['index'], errors='ignore')
+
+# union the files together
+flight_details_df = pd.concat([flow_card_df, nonflow_card_df], ignore_index=True)
+
+# pivot data to get class into field names to switch with correct values
+flight_details_df = flight_details_df.pivot_table(index=['Date','Flight Number','From','To','Flow Card?','Bags Checked','Meal Type'], columns=['Class'], values='Price',aggfunc='sum')
+flight_details_df.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in flight_details_df.columns]
+flight_details_df = flight_details_df.reset_index()
+flight_details_df = flight_details_df.rename(columns={'Business Class': 'Premium Economy', 'Economy': 'First Class', 'First Class': 'Economy', 'Premium Economy': 'Business Class'})
+
+flight_details_df = flight_details_df.melt(
+    id_vars=['Date', 'Flight Number', 'From', 'To', 'Flow Card?', 'Bags Checked', 'Meal Type'],
+    value_vars=['Premium Economy', 'First Class', 'Economy', 'Business Class'],
+    var_name='Class',
+    value_name='Price'
+)
+
+print(flight_details_df)
+
+# parseparse out the first letter of every word in class
+flight_details_df['Class'] = (
+    flight_details_df['Class']
+    .fillna('')  # handles NaNs if any
+    .apply(lambda x: ''.join([word[0] for word in x.split() if word]))
+)
+
+# print(flight_details_df.groupby('Class').count())
+
+# convert date field to date object and extract month value
+flight_details_df['Date'] = pd.to_datetime(flight_details_df['Date'], format='%d/%m/%Y')
+flight_details_df['Date'] = flight_details_df['Date'].dt.month
+
+# calculate the sum of sales for each month and class
+agg_df = flight_details_df.groupby(['Class', 'Date']).agg({'Price': ['sum']})
+agg_df.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in agg_df.columns]
+agg_df.reset_index()
+
+# join the two different data sources together
+merged_df = agg_df.merge(quarterly_data, on=['Class','Date'], how='inner')
+
+merged_df = merged_df.rename(columns={'Price_sum': 'Price'})
+
+# print(type(agg_df))
+# print(agg_df.index)
+# print(agg_df.columns)
+
+# print(type(quarterly_data))
+# print(quarterly_data.index)
+# print(quarterly_data.columns)
+
+# calculate the difference between price and target
+merged_df['Difference to Target'] = merged_df['Price'] - merged_df['Target']
+merged_df = merged_df[['Difference to Target','Date','Price','Class','Target']]
+
+print(merged_df)

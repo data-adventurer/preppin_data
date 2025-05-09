@@ -1,0 +1,35 @@
+import pandas as pd
+
+# import csv file and transform it into a dataframe
+flight_data = pd.read_csv('C:/Users/LorraineFerrusi/OneDrive - The Information Lab/Documents/GitHub/preppin_data/2024/Data/PD 2024 Wk 1 Input.csv')
+
+# split flight details field into multiple coluns
+flight_data[['Date', 'Flight Number', 'To-From', 'Class', 'Price']] = flight_data['Flight Details'].str.split('//', expand=True)
+flight_data[['To', 'From']] = flight_data['To-From'].str.split('-', expand=True)
+
+# drop the original columns that are no longer needed
+flight_data = flight_data.drop(columns=['Flight Details', 'To-From'])
+
+# convert date field to date type and price field to float
+flight_data['Date'] = pd.to_datetime(flight_data['Date'], format='%Y-%m-%d')
+flight_data['Price'] = flight_data['Price'].astype(float)
+
+# change the 1/0 in flow card column to Yes/No
+flight_data['Flow Card?'] = flight_data['Flow Card?'].map({1:'Yes', 0: 'No'})
+
+# change the order of the fields to match the output file
+flight_data = flight_data[['Date', 'Flight Number', 'From', 'To', 'Class', 'Price', 'Flow Card?', 'Bags Checked', 'Meal Type']]
+
+# split the tabke int two tables, one with flow card and one without
+flight_data_withflowcard = flight_data[flight_data['Flow Card?'] == 'Yes']
+flight_data_withoutflowcard = flight_data[flight_data['Flow Card?'] == 'No']
+
+print(flight_data_withflowcard.head())
+print(len(flight_data_withflowcard))
+
+print(flight_data_withoutflowcard.head())
+print(len(flight_data_withoutflowcard))
+
+
+
+

@@ -1,0 +1,43 @@
+import pandas as pd 
+
+# import csv files and transform it into a dataframe
+flow_card_df = pd.read_csv('C:/Users/LorraineFerrusi/OneDrive - The Information Lab/Documents/GitHub/preppin_data/2024/Data/PD 2024 Wk 1 Output Flow Card.csv')
+nonflow_card_df = pd.read_csv('C:/Users/LorraineFerrusi/OneDrive - The Information Lab/Documents/GitHub/preppin_data/2024/Data/PD 2024 Wk 1 Output Non-Flow Card.csv')
+
+# union the files together
+flight_details_df = pd.concat([flow_card_df, nonflow_card_df], ignore_index=True)
+
+# convert date field to date object and extract quarterly value
+flight_details_df['Date'] = pd.to_datetime(flight_details_df['Date'], format='%d/%m/%Y')
+flight_details_df['Quarter'] = flight_details_df['Date'].dt.quarter
+
+# get the median, minimum, maximum price per flow card, quarter and class
+median_price = flight_details_df.groupby(['Flow Card?', 'Quarter', 'Class']).agg({'Price': ['median']}).reset_index()
+median_price.columns = ['Flow Card?', 'Quarter', 'Class', 'Price']
+median_price['Agg'] = 'Median'
+
+
+min_price = flight_details_df.groupby(['Flow Card?', 'Quarter', 'Class']).agg({'Price': ['min']}).reset_index()
+min_price.columns = ['Flow Card?', 'Quarter', 'Class', 'Price']
+min_price['Agg'] = 'Minimum'
+
+max_price = flight_details_df.groupby(['Flow Card?', 'Quarter', 'Class']).agg({'Price': ['max']}).reset_index()
+max_price.columns = ['Flow Card?', 'Quarter', 'Class', 'Price']
+max_price['Agg'] = 'Maxmimum'
+
+# union the three dataframes together
+grouped_flight_details = pd.concat([median_price, min_price, max_price], ignore_index=True)
+
+# pivot the table to create a field for each class
+grouped_flight_details = grouped_flight_details.pivot(index=['Flow Card?', 'Quarter', 'Agg'], columns=['Class'], values='Price').reset_index()
+
+#drop the agg field from the columns
+grouped_flight_details = grouped_flight_details.drop(columns=['Agg'])
+
+# rename fields to accurately match the data
+grouped_flight_details.rename(columns={'Flow Card?': 'Flow Card', 'Quarter': 'Quarter', 'Business Class': 'Premium', 'Economy': 'First', 'First Class': 'Economy', 'Premium Economy': 'Business'}, inplace=True)
+
+# change the order of the fields to match the output file
+grouped_flight_details = grouped_flight_details[['Flow Card', 'Quarter', 'Economy', 'Premium', 'Business', 'First']]
+
+print(grouped_flight_details)
